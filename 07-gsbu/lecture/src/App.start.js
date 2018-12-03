@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import Alert from "@reach/alert";
 
+// Get Snapshot Before Update
+
 let sleep = ms => new Promise(res => setTimeout(res, ms));
 
 let subscribeEmail = email =>

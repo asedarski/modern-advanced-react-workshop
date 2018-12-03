@@ -43,7 +43,7 @@ Other notes about the `<audio/>` tag:
 Good luck!
 */
 
-import React from "react";
+import React, { createContext } from "react";
 import podcast from "./lib/podcast.mp4";
 import mario from "./lib/mariobros.mp3";
 import FaPause from "react-icons/lib/fa/pause";
@@ -51,19 +51,61 @@ import FaPlay from "react-icons/lib/fa/play";
 import FaRepeat from "react-icons/lib/fa/repeat";
 import FaRotateLeft from "react-icons/lib/fa/rotate-left";
 
+let PlayerContext = createContext();
+
 class AudioPlayer extends React.Component {
+  state = {
+    isPlaying: false,
+    loaded: false,
+    duration: 0,
+    currentTime: 0,
+    play: () => {
+      this.audio.play();
+      this.setState({ isPlaying: true });
+    },
+    pause: () => {
+      this.audio.pause();
+      this.setState({ isPlaying: false });
+    },
+    jumpForward: () => {
+      this.audio.currentTime += 10;
+    },
+    jumpBack: () => {
+      this.audio.currentTime -= 30;
+    },
+    setTime: (time) => {
+      this.audio.currentTime = time;
+    }
+  };
+
   render() {
     return (
-      <div className="audio-player">
-        <audio
-          src={this.props.source}
-          onTimeUpdate={null}
-          onLoadedData={null}
-          onEnded={null}
-          ref={n => (this.audio = n)}
-        />
-        {this.props.children}
-      </div>
+      <PlayerContext.Provider value={this.state}>
+        <div className="audio-player">
+          <audio
+            src={this.props.source}
+            onTimeUpdate={() => {
+              this.setState({
+                currentTime: this.audio.currentTime,
+                duration: this.audio.duration
+              })
+            }}
+            onLoadedData={() => {
+              this.setState({
+                duration: this.audio.duration,
+                loaded: true
+              })
+            }}
+            onEnded={() => {
+              this.setState({
+                isPlaying: false
+              })
+            }}
+            ref={n => (this.audio = n)}
+          />
+          {this.props.children}
+        </div>
+      </PlayerContext.Provider>
     );
   }
 }
@@ -71,14 +113,18 @@ class AudioPlayer extends React.Component {
 class Play extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="play"
-      >
-        <FaPlay />
-      </button>
+      <PlayerContext.Consumer>
+        {context => (
+          <button
+            className="icon-button"
+            onClick={context.play}
+            disabled={context.isPlaying}
+            title="play"
+          >
+            <FaPlay />
+          </button>
+        )}
+      </PlayerContext.Consumer>
     );
   }
 }
@@ -86,35 +132,47 @@ class Play extends React.Component {
 class Pause extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="pause"
-      >
-        <FaPause />
-      </button>
+      <PlayerContext.Consumer>
+        {context => (
+          <button
+            className="icon-button"
+            onClick={context.pause}
+            disabled={!context.isPlaying}
+            title="pause"
+          >
+            <FaPause />
+          </button>
+        )}
+      </PlayerContext.Consumer>
     );
   }
 }
 
 class PlayPause extends React.Component {
   render() {
-    return null;
+    return (
+      <PlayerContext.Consumer>
+        {context => (context.isPlaying ? <Pause /> : <Play />)}
+      </PlayerContext.Consumer>
+    );
   }
 }
 
 class JumpForward extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="Forward 10 Seconds"
-      >
-        <FaRepeat />
-      </button>
+      <PlayerContext.Consumer>
+        {context => (
+          <button
+            className="icon-button"
+            onClick={context.jumpForward}
+            disabled={null}
+            title="Forward 10 Seconds"
+          >
+            <FaRepeat />
+          </button>
+        )}
+      </PlayerContext.Consumer>
     );
   }
 }
@@ -122,29 +180,52 @@ class JumpForward extends React.Component {
 class JumpBack extends React.Component {
   render() {
     return (
-      <button
-        className="icon-button"
-        onClick={null}
-        disabled={null}
-        title="Back 10 Seconds"
-      >
-        <FaRotateLeft />
-      </button>
+      <PlayerContext.Consumer>
+        {context => (
+          <button
+            className="icon-button"
+            onClick={context.jumpBack}
+            disabled={null}
+            title="Back 10 Seconds"
+          >
+            <FaRotateLeft />
+          </button>
+        )}
+      </PlayerContext.Consumer>
+
     );
   }
 }
 
 class Progress extends React.Component {
+  calculateClick = (event) => {
+    let xPos = event.clientX;
+    let rect = this.node.getBoundingClientRect();
+    let length = rect.right - rect.left;
+    return (xPos - rect.left) / length;
+  };
+
   render() {
     return (
-      <div className="progress" onClick={null}>
-        <div
-          className="progress-bar"
-          style={{
-            width: "23%"
-          }}
-        />
-      </div>
+      <PlayerContext.Consumer>
+        {context => (
+          <div
+            className="progress"
+            ref={n => this.node = n}
+            onClick={event => {
+              let click = this.calculateClick(event);
+              context.setTime(click * context.duration);
+            }}
+          >
+            <div
+              className="progress-bar"
+              style={{
+                width: (context.loaded) ? `${(context.currentTime / context.duration) * 100}%` : '0%'
+              }}
+            />
+          </div>
+        )}
+      </PlayerContext.Consumer>
     );
   }
 }

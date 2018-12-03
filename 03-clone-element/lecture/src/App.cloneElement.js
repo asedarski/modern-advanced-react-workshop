@@ -16,6 +16,7 @@ class Tabs extends Component {
 
   render() {
     const children = React.Children.map(this.props.children, child => {
+      // Adding in more properties to the child
       return React.cloneElement(child, {
         activeIndex: this.state.activeIndex,
         onSelectTab: this.selectTabIndex

@@ -29,6 +29,17 @@ class App extends Component {
     messages: []
   };
 
+  getSnapshotBeforeUpdate() {
+    let { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    return (scrollHeight - clientHeight) === scrollTop;
+  }
+
+  componentDidUpdate(prevProps, prevState, shouldScroll) {
+    if (shouldScroll) {
+      document.documentElement.scrollTop = document.documentElement.scrollHeight;
+    }
+  }
+
   componentDidMount() {
     subscribeToMessages(message => {
       this.setState({

@@ -18,6 +18,20 @@ Tips:
 
 import React, { Component } from "react";
 
+class DocumentTitle extends Component {
+  componentDidMount() {
+    document.title = this.props.title;
+  }
+
+  componentDidUpdate() {
+    document.title = this.props.title;
+  }
+
+  render() {
+    return null;
+  }
+}
+
 class App extends Component {
   state = {
     completed: 0,
@@ -27,10 +41,12 @@ class App extends Component {
   render() {
     let { todos, completed } = this.state;
     let incomplete = todos.length - completed;
+    let title = `Todos (${incomplete})`;
 
     return (
       <div className="app">
-        <h1>Todos ({incomplete})</h1>
+        <DocumentTitle title={ title }/>
+        <h1>{ title }</h1>
 
         <form
           onSubmit={event => {
